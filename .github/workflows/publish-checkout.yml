@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        system: [crypto-protocol, crypto-backend-ironclad]
+        system: [crypto-protocol]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -56,4 +56,3 @@ jobs:
           PKG_SYSTEM: ${{ matrix.system }}
           PKG_VERSION: ${{ inputs.version }}
         run: sbcl --noinform --non-interactive --load scripts/publish-checkout.lisp
-
