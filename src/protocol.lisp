@@ -98,7 +98,7 @@ Prefer SEAL for application data."
       ((and secrets (fboundp secrets)) (funcall secrets nbytes))
       ((and iron (fboundp iron)) (funcall iron nbytes))
       (t (error 'crypto-error
-                :message "no CSPRNG — load secrets-backend-os or crypto-backend-ironclad")))))
+                :message "no CSPRNG — load crypto-backend-ironclad")))))
 
 (defun %pack-sealed (nonce ciphertext tag)
   (let* ((magic +seal-magic+)
