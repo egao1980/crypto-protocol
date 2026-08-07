@@ -26,9 +26,7 @@
  (lambda ()
    (cl-repo:ensure-system-dependencies "crypto-protocol"
      :also-tests t
-     :with '("crypto-backend-ironclad")
-     :sources '(("ironclad" :ql)
-                ("rove" :ql)))))
+     :sources '(("rove" :ql)))))
 
 (format t "~&; ci: install phase done~%")
 (uiop:quit 0)

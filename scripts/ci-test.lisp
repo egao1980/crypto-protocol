@@ -25,7 +25,7 @@
 
 (call-with-ci-muffles
  (lambda ()
-   (dolist (n '("crypto-protocol" "crypto-backend-ironclad" "ironclad" "rove"))
+   (dolist (n '("crypto-protocol" "rove"))
      (unless (asdf:find-system n nil)
        (ql:quickload n :silent t)))
    (asdf:test-system "crypto-protocol")))
