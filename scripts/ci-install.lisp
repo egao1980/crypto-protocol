@@ -24,9 +24,10 @@
 
 (call-with-ci-muffles
  (lambda ()
-   (cl-repo:ensure-system-dependencies "crypto-backend-ironclad"
+   (cl-repo:ensure-system-dependencies "crypto-protocol"
      :also-tests t
-     :sources '(("ironclad" :ql),
+     :with '("crypto-backend-ironclad")
+     :sources '(("ironclad" :ql)
                 ("rove" :ql)))))
 
 (format t "~&; ci: install phase done~%")
