@@ -30,39 +30,19 @@ jobs:
 
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
 
-      - name: Install Roswell (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          curl -sL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | bash
-          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
-
-      - name: Install Roswell (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          curl -sL "https://github.com/roswell/roswell/releases/download/v${ROSWELL_VERSION}/roswell_${ROSWELL_VERSION}_amd64.zip"             -o /tmp/roswell.zip
-          rm -rf /c/roswell && mkdir -p /c/roswell
-          unzip -qo /tmp/roswell.zip -d /c/roswell
-          echo "/c/roswell/roswell" >> "$GITHUB_PATH"
-          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
-
-      - name: Install SBCL
-        shell: bash
-        run: |
-          ros install "sbcl-bin/$SBCL_VERSION"
-          ros use "sbcl-bin/$SBCL_VERSION"
+      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
+        with:
+          sbcl-version: ${{ env.SBCL_VERSION }}
+          roswell-version: ${{ env.ROSWELL_VERSION }}
 
       - name: cl-repo install deps
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-install.lisp -q
 
       - name: Test
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-test.lisp -q
 
   # ECL smoke — linux/amd64 only (cl-stack#42). Local brew ECL already green.
@@ -77,11 +57,10 @@ jobs:
 
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
 
-      - name: Install Roswell
-        shell: bash
-        run: |
-          curl -sL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | bash
-          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
+      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
+        with:
+          install-sbcl: "false"
+          roswell-version: ${{ env.ROSWELL_VERSION }}
 
       - name: Install ECL
         shell: bash
@@ -94,13 +73,11 @@ jobs:
       - name: cl-repo install deps
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-install.lisp -q
 
       - name: Test
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-test.lisp -q
 
   # ABCL smoke — linux/amd64 (cl-stack#42). Local brew + clean Ubuntu green.
@@ -120,11 +97,10 @@ jobs:
 
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
 
-      - name: Install Roswell
-        shell: bash
-        run: |
-          curl -sL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | bash
-          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
+      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
+        with:
+          install-sbcl: "false"
+          roswell-version: ${{ env.ROSWELL_VERSION }}
 
       - name: Install ABCL
         shell: bash
@@ -149,13 +125,11 @@ jobs:
       - name: cl-repo install deps
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-install.lisp -q
 
       - name: Test
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-test.lisp -q
 
   # CCL smoke — linux/amd64 only (cl-stack#42). Local Rosetta CCL 1.13 green.
@@ -170,11 +144,10 @@ jobs:
 
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
 
-      - name: Install Roswell
-        shell: bash
-        run: |
-          curl -sL https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | bash
-          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
+      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
+        with:
+          install-sbcl: "false"
+          roswell-version: ${{ env.ROSWELL_VERSION }}
 
       - name: Install CCL
         shell: bash
@@ -185,11 +158,9 @@ jobs:
       - name: cl-repo install deps
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-install.lisp -q
 
       - name: Test
         shell: bash
         run: |
-          export CL_SOURCE_REGISTRY="$(pwd)//:$(pwd)/${CL_REPOSITORY_CLIENT_DIR}//:"
           ros -l scripts/ci-test.lisp -q
