@@ -1,14 +1,11 @@
-name: Test
+name: test
 
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
-
-concurrency:
-  group: crypto-protocol-test-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   SBCL_VERSION: 2.6.7
@@ -17,70 +14,8 @@ env:
 
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - uses: actions/checkout@v5
+    uses: egao1980/cl-repository/.github/workflows/test-system.yml@main
 
-      - uses: egao1980/cl-repository/.github/actions/setup-client@main
-
-      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
-        with:
-          sbcl-version: ${{ env.SBCL_VERSION }}
-          roswell-version: ${{ env.ROSWELL_VERSION }}
-
-      - name: cl-repo install deps
-        shell: bash
-        run: |
-          ros -l scripts/ci-install.lisp -q
-
-      - name: Test
-        shell: bash
-        run: |
-          ros -l scripts/ci-test.lisp -q
-
-  # ECL smoke — linux/amd64 only (cl-stack#42). Local brew ECL already green.
-  test-ecl:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: egao1980/cl-repository/.github/actions/setup-client@main
-
-      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
-        with:
-          install-sbcl: "false"
-          roswell-version: ${{ env.ROSWELL_VERSION }}
-
-      - name: Install ECL
-        shell: bash
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends build-essential libffi-dev libgc-dev libgmp-dev
-          ros install ecl
-          ros use ecl
-
-      - name: cl-repo install deps
-        shell: bash
-        run: |
-          ros -l scripts/ci-install.lisp -q
-
-      - name: Test
-        shell: bash
-        run: |
-          ros -l scripts/ci-test.lisp -q
-
-  # ABCL smoke — linux/amd64 (cl-stack#42). Local brew + clean Ubuntu green.
   test-abcl:
     runs-on: ubuntu-latest
     permissions:
@@ -89,25 +24,20 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
-
       - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
         with:
           install-sbcl: "false"
           roswell-version: ${{ env.ROSWELL_VERSION }}
-
       - name: Install ABCL
         shell: bash
         run: |
           ros install abcl-bin
           ros use abcl-bin
-
       - name: Install JNA (CFFI on ABCL)
         shell: bash
         run: |
@@ -121,18 +51,40 @@ jobs:
             echo "CLASSPATH=$HOME/jna/jna-${JNA_VER}.jar:$HOME/jna/jna-platform-${JNA_VER}.jar${CLASSPATH:+:$CLASSPATH}"
             echo "JAVA_TOOL_OPTIONS=--enable-native-access=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED ${JAVA_TOOL_OPTIONS:-}"
           } >> "$GITHUB_ENV"
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: install
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: test
 
-      - name: cl-repo install deps
+  test-ecl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: egao1980/cl-repository/.github/actions/setup-client@main
+      - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
+        with:
+          install-sbcl: "false"
+          roswell-version: ${{ env.ROSWELL_VERSION }}
+      - name: Install ECL
         shell: bash
         run: |
-          ros -l scripts/ci-install.lisp -q
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends build-essential libffi-dev libgc-dev libgmp-dev
+          ros install ecl
+          ros use ecl
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: install
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: test
 
-      - name: Test
-        shell: bash
-        run: |
-          ros -l scripts/ci-test.lisp -q
-
-  # CCL smoke — linux/amd64 only (cl-stack#42). Local Rosetta CCL 1.13 green.
   test-ccl:
     runs-on: ubuntu-latest
     permissions:
@@ -141,26 +93,19 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
-
       - uses: egao1980/cl-repository/.github/actions/setup-client@main
-
       - uses: egao1980/cl-repository/.github/actions/setup-roswell@main
         with:
           install-sbcl: "false"
           roswell-version: ${{ env.ROSWELL_VERSION }}
-
       - name: Install CCL
         shell: bash
         run: |
           ros install ccl-bin
           ros use ccl-bin
-
-      - name: cl-repo install deps
-        shell: bash
-        run: |
-          ros -l scripts/ci-install.lisp -q
-
-      - name: Test
-        shell: bash
-        run: |
-          ros -l scripts/ci-test.lisp -q
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: install
+      - uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: test
