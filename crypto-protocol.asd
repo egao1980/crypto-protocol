@@ -1,6 +1,6 @@
 (defsystem "crypto-protocol"
-  :version "0.1.1"
-  :description "CLOS crypto protocol for cl-stack (recipes + hazmat AEAD/digest/HMAC)"
+  :version "0.2.0"
+  :description "CLOS crypto protocol for cl-stack (recipes + hazmat AEAD/digest/HMAC/sign)"
   :author "egao1980"
   :license "MIT"
   :depends-on ()

@@ -6,7 +6,20 @@
 (deftest no-backend-signals
   (let ((crypto-protocol:*crypto-backend* nil))
     (ok (signals (crypto-protocol:digest #(1 2 3))
+                 'crypto-protocol:crypto-error))
+    (ok (signals (crypto-protocol:sign #(1 2 3) :algorithm :ed25519 :key #(1))
+                 'crypto-protocol:crypto-error))
+    (ok (signals (crypto-protocol:verify #(1) #(2) :algorithm :ed25519 :key #(1))
                  'crypto-protocol:crypto-error))))
+
+(deftest sign-requires-algorithm-and-key
+  (let ((crypto-protocol:*crypto-backend* (make-instance 'crypto-protocol:crypto-backend)))
+    (ok (signals (crypto-protocol:sign #(1 2 3) :key #(1))
+                 'crypto-protocol:crypto-key-error))
+    (ok (signals (crypto-protocol:sign #(1 2 3) :algorithm :ed25519)
+                 'crypto-protocol:crypto-key-error))
+    (ok (signals (crypto-protocol:sign #(1 2 3) :algorithm :ed25519 :key #(1))
+                 'crypto-protocol:crypto-unsupported))))
 
 (deftest seal-key-length
   (let ((crypto-protocol:*crypto-backend* nil)
