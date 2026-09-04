@@ -14,6 +14,9 @@
            #:backend-hmac
            #:backend-aead-encrypt
            #:backend-aead-decrypt
+           #:backend-sign
+           #:backend-verify
+           #:backend-generate-key-pair
            #:make-hasher
            #:make-mac-ctx
            #:update!
@@ -26,6 +29,9 @@
            #:seal
            #:unseal
            #:generate-key
+           #:sign
+           #:verify
+           #:generate-key-pair
 
            #:+seal-magic+
            #:+seal-nonce-length+

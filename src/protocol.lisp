@@ -23,6 +23,8 @@
     ((simple-array (unsigned-byte 8) (*)) x)
     ((vector (unsigned-byte 8))
      (coerce x '(simple-array (unsigned-byte 8) (*))))
+    ((and vector (not string))
+     (coerce x '(simple-array (unsigned-byte 8) (*))))
     (string
      (error 'crypto-key-error
             :message "expected octets; encode strings before calling crypto APIs"))))
@@ -47,6 +49,17 @@
 (defgeneric backend-aead-decrypt (backend algorithm key ciphertext &key nonce tag aad)
   (:documentation "→ plaintext octets, or signal crypto-authentication-error."))
 
+(defgeneric backend-sign (backend algorithm key message &key)
+  (:documentation "Sign MESSAGE with KEY. ALGORITHM is :ed25519, :rsa-pss-sha256,
+:ecdsa-p256-sha256, or :rsa-pkcs1-sha256. → signature octets."))
+
+(defgeneric backend-verify (backend algorithm key message signature &key)
+  (:documentation "Verify SIGNATURE. T on success; signal crypto-authentication-error
+on a bad signature (fail closed)."))
+
+(defgeneric backend-generate-key-pair (backend algorithm &key)
+  (:documentation "→ (values private-key public-key) for ALGORITHM."))
+
 (defgeneric make-hasher (backend algorithm)
   (:documentation "Incremental digest context."))
 
@@ -58,6 +71,21 @@
 
 (defgeneric finalize (ctx)
   (:documentation "Finish hasher/MAC; return digest octets."))
+
+(defmethod backend-sign ((backend crypto-backend) algorithm key message &key)
+  (declare (ignore algorithm key message))
+  (error 'crypto-unsupported
+         :message "backend-sign not implemented — load crypto-backend-ironclad"))
+
+(defmethod backend-verify ((backend crypto-backend) algorithm key message signature &key)
+  (declare (ignore algorithm key message signature))
+  (error 'crypto-unsupported
+         :message "backend-verify not implemented — load crypto-backend-ironclad"))
+
+(defmethod backend-generate-key-pair ((backend crypto-backend) algorithm &key)
+  (declare (ignore algorithm))
+  (error 'crypto-unsupported
+         :message "backend-generate-key-pair not implemented"))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Facade (hazmat + recipes)
@@ -87,6 +115,36 @@ Prefer SEAL for application data."
   "Hazmat AEAD decrypt. Signals CRYPTO-AUTHENTICATION-ERROR on bad tag."
   (backend-aead-decrypt (%ensure-backend backend) algorithm (%octets key)
                         (%octets ciphertext) :nonce nonce :tag tag :aad aad))
+
+(defun sign (message &key algorithm key (backend *crypto-backend*))
+  "Hazmat sign. ALGORITHM required. KEY is a backend key object or raw octets
+(Ed25519 seed / public)."
+  (unless algorithm
+    (error 'crypto-key-error :message "sign requires :algorithm"))
+  (unless key
+    (error 'crypto-key-error :message "sign requires :key"))
+  (backend-sign (%ensure-backend backend) algorithm key
+                (if (stringp message)
+                    (error 'crypto-key-error
+                           :message "expected octets; encode strings before calling crypto APIs")
+                    (%octets message))))
+
+(defun verify (message signature &key algorithm key (backend *crypto-backend*))
+  "Hazmat verify. Signals CRYPTO-AUTHENTICATION-ERROR on a bad signature."
+  (unless algorithm
+    (error 'crypto-key-error :message "verify requires :algorithm"))
+  (unless key
+    (error 'crypto-key-error :message "verify requires :key"))
+  (backend-verify (%ensure-backend backend) algorithm key
+                  (if (stringp message)
+                      (error 'crypto-key-error
+                             :message "expected octets; encode strings before calling crypto APIs")
+                      (%octets message))
+                  (%octets signature)))
+
+(defun generate-key-pair (algorithm &key (backend *crypto-backend*))
+  "→ (values private public) for ALGORITHM."
+  (backend-generate-key-pair (%ensure-backend backend) algorithm))
 
 (defun generate-key (&key (nbytes +seal-key-length+))
   "CSPRNG key material. Prefers secrets-protocol; falls back to Ironclad OS PRNG."
